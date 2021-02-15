@@ -33,37 +33,6 @@ std::vector<std::string> faces
 		 "CubeMap/back.jpg"
 };
 
-GLuint LoadCubeMap(std::vector<std::string> faces) {
-	GLuint textureID;
-	glGenTextures(1, &textureID);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
-
-	int width, height, nrChannels;
-	for (unsigned int i = 0; i < faces.size(); i++)
-	{
-		stbi_set_flip_vertically_on_load(true);
-		unsigned char *data = stbi_load(faces[i].c_str(), &width, &height, &nrChannels, 0);
-		if (data)
-		{
-			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-			stbi_image_free(data);
-		}
-		else
-		{
-			std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
-			stbi_image_free(data);
-		}
-	}
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-	return textureID;
-
-}
-
 struct Vertex {
 	glm::vec3 Position;
 	glm::vec3 Normal;
@@ -252,8 +221,6 @@ GLuint LoadSphere(GLuint &NumVertices, GLuint &NumIndices)
 	NumVertices = Vertices.size();
 	NumIndices = Triangles.size() * 3;
 
-	
-	
 	GLuint VertexBuffer;
 	glGenBuffers(1, &VertexBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, VertexBuffer);
@@ -477,7 +444,7 @@ int main() {
 	GLuint CubeMap = LoadCubeMapGeometry();
 
 	// CubeMap texture
-	GLuint CubeMapTexture = LoadCubeMap(faces);
+	Texture CubeMapTextures(faces);
 
 	//GLuint QuadVAO = LoadGeometry();
 
@@ -590,7 +557,7 @@ int main() {
 
 		glBindVertexArray(CubeMap);
 		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, CubeMapTexture);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, CubeMapTextures.ID);
 		glDepthFunc(GL_LEQUAL);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
