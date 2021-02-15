@@ -15,50 +15,13 @@
 #include <glm/ext.hpp>
 #include <glm/gtx/string_cast.hpp>
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
 
+#include "Texture.h"
 #include "Shader.h"
 
 unsigned int width = 800;
 unsigned int height = 600;
 
-
-GLuint LoadTexture(const char* TextureFile) 
-{
-	std::cout << "Loading texture " << TextureFile<<std::endl;
-
-	stbi_set_flip_vertically_on_load(true);
-
-	int TextureWidth = 0;
-	int TextureHeight = 0;
-	int NumberOfcomponents = 0;
-	unsigned char* TextureData = stbi_load(TextureFile, &TextureWidth, &TextureHeight, &NumberOfcomponents, 3);
-
-	if (!TextureData) {
-		std::cout << "Error loading the texture " << TextureFile << std::endl;
-		return 0;
-	}
-
-	GLuint TextureID;
-	glGenTextures(1, &TextureID);
-	glBindTexture(GL_TEXTURE_2D,TextureID);
-
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, TextureWidth, TextureHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, TextureData);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-	glGenerateMipmap(GL_TEXTURE_2D);
-
-	glBindTexture(GL_TEXTURE_2D, 0);
-	stbi_image_free(TextureData);
-
-	return TextureID;
-
-}
 
 std::vector<std::string> faces
 {
@@ -504,12 +467,12 @@ int main() {
 	Shader EarthShader("Shaders/triangle_vert.glsl", "Shaders/triangle_frag.glsl");
 	Shader SkyBoxShader("Shaders/skybox_vert.glsl", "Shaders/skybox_frag.glsl");
 
-	GLuint DiffuseDayID = LoadTexture("Textures/earth_2k.jpg");
-	GLuint TextureSpecularID = LoadTexture("Textures/2k_earth_specular_map.jpg");
-	GLuint TextureCloudsID = LoadTexture("Textures/2k_earth_clouds.jpg");
-	GLuint DiffuseNightID = LoadTexture("Textures/2k_earth_nightmap.jpg");
+	Texture DiffuseTexture("Textures/earth_2k.jpg");
+	Texture SpecularTexture("Textures/2k_earth_specular_map.jpg");
+	Texture CloudsTexture("Textures/2k_earth_clouds.jpg");
+	Texture DiffuseNightTexture("Textures/2k_earth_nightmap.jpg");
 
-
+	
 	//cubeMap Geometry
 	GLuint CubeMap = LoadCubeMapGeometry();
 
@@ -590,16 +553,16 @@ int main() {
 		EarthShader.setFloat("Time", CurrentTime);
 
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, DiffuseDayID);
+		glBindTexture(GL_TEXTURE_2D, DiffuseTexture.ID);
 
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, TextureSpecularID);
+		glBindTexture(GL_TEXTURE_2D, SpecularTexture.ID);
 
 		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, TextureCloudsID);
+		glBindTexture(GL_TEXTURE_2D, CloudsTexture.ID);
 
 		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, DiffuseNightID);
+		glBindTexture(GL_TEXTURE_2D, DiffuseNightTexture.ID);
 
 		EarthShader.setMat4("ModelViewProjection", ModelViewProjection);
 		EarthShader.setMat4("NormalMatrix", NormalMatrix);
