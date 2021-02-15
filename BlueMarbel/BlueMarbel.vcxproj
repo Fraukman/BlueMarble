@@ -163,8 +163,10 @@
     <ClCompile Include="GUI\imgui_impl_opengl3.cpp" />
     <ClCompile Include="GUI\imgui_tables.cpp" />
     <ClCompile Include="GUI\imgui_widgets.cpp" />
+    <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Shader.h" />
     <ClInclude Include="GUI\imconfig.h" />
     <ClInclude Include="GUI\imgui.h" />
     <ClInclude Include="GUI\imgui_impl_glfw.h" />

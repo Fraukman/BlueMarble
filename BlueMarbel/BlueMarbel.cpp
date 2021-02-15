@@ -17,91 +17,11 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include "Shader.h"
+
 unsigned int width = 800;
 unsigned int height = 600;
 
-std::string ReadFile(const char* FilePath)
-{
-	std::string FileContents;
-	if (std::ifstream FileStream{ FilePath,std::ios::in }) {
-		FileContents.assign(std::istreambuf_iterator<char>(FileStream), std::istreambuf_iterator<char>());
-	}
-	else {
-		std::cerr << "Error reading the file" << std::endl;
-	}
-	return FileContents;
-}
-
-void CheckShader(GLuint shaderId,GLenum shaderType) {
-	GLint Result = GL_TRUE;
-	glGetShaderiv(shaderId, GL_COMPILE_STATUS, &Result);
-
-	if (Result == GL_FALSE) {
-		GLint InfoLogLenght = 0;
-		glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &InfoLogLenght);
-
-		if (InfoLogLenght > 0) {
-			std::string ShaderInfoLog (InfoLogLenght,'\0');
-			glGetShaderInfoLog(shaderId, InfoLogLenght, nullptr, &ShaderInfoLog[0]);
-			std::string typeShader = (shaderType == GL_VERTEX_SHADER) ? "VertexShader" : "FragmentShader";
-			std::cout << "Error Compiling the " <<typeShader<< std::endl;
-			std::cout << ShaderInfoLog << std::endl;
-		}
-	}
-}
-
-GLuint LoadShaders(const char* VertexShaderFile, const char* FragmentShaderFile) 
-{
-	std::string VertexShaderSource = ReadFile(VertexShaderFile);
-	std::string FragmentShaderSource = ReadFile(FragmentShaderFile);
-
-	GLuint VertexShaderId = glCreateShader(GL_VERTEX_SHADER);
-	GLuint FragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
-
-	const char* VertexShaderSourcePtr = VertexShaderSource.c_str();
-	glShaderSource(VertexShaderId,1,&VertexShaderSourcePtr,nullptr);
-	glCompileShader(VertexShaderId);
-	CheckShader(VertexShaderId,GL_VERTEX_SHADER);
-
-	const char* FragmentShaderSourcePtr = FragmentShaderSource.c_str();
-	glShaderSource(FragmentShaderId, 1, &FragmentShaderSourcePtr, nullptr);
-	glCompileShader(FragmentShaderId);
-	CheckShader(FragmentShaderId,GL_FRAGMENT_SHADER);
-
-	GLuint ProgramId = glCreateProgram();
-	glAttachShader(ProgramId, VertexShaderId);
-	glAttachShader(ProgramId, FragmentShaderId);
-	glLinkProgram(ProgramId);
-
-	GLint Result = GL_TRUE;
-	glGetProgramiv(ProgramId, GL_LINK_STATUS, &Result);
-
-	if (Result == GL_FALSE) {
-		GLint InfoLogLength;
-		glGetProgramiv(ProgramId, GL_INFO_LOG_LENGTH, &InfoLogLength);
-
-		if (InfoLogLength > 0) 
-		{
-			std::string InfoLog(InfoLogLength, '\0');
-			glGetProgramInfoLog(ProgramId, InfoLogLength, nullptr, &InfoLog[0]);
-			std::cout<< "Error Linking the program" << std::endl;
-			std::cout << InfoLog << std::endl;
-		}
-
-		std::cerr << "Error Linking the program" << std::endl;
-	}
-
-	glDetachShader(ProgramId,VertexShaderId);
-	glDetachShader(ProgramId ,FragmentShaderId);
-
-	glDeleteShader(VertexShaderId);
-	glDeleteShader(FragmentShaderId);
-
-	std::cout << "Deu Bom" << std::endl;
-
-	return ProgramId;
-
-}
 
 GLuint LoadTexture(const char* TextureFile) 
 {
@@ -541,7 +461,7 @@ int main() {
 		return -1;
 	}
 
-	GLFWwindow* window = glfwCreateWindow(width, height, "Blue Marbel", nullptr, nullptr);
+	GLFWwindow* window = glfwCreateWindow(width, height, "Blue Marble", nullptr, nullptr);
 	if (!window) {
 		std::cerr << "Error creating window" << std::endl;
 		return -1;
@@ -580,8 +500,9 @@ int main() {
 	glEnable(GL_DEPTH_TEST);
 	//glDepthFunc(GL_LESS);
 
-	GLuint ProgramId = LoadShaders("Shaders/triangle_vert.glsl", "Shaders/triangle_frag.glsl");
-	GLuint SkyBoxShader = LoadShaders("Shaders/skybox_vert.glsl", "Shaders/skybox_frag.glsl");
+	//GLuint ProgramId = LoadShaders("Shaders/triangle_vert.glsl", "Shaders/triangle_frag.glsl");
+	Shader EarthShader("Shaders/triangle_vert.glsl", "Shaders/triangle_frag.glsl");
+	Shader SkyBoxShader("Shaders/skybox_vert.glsl", "Shaders/skybox_frag.glsl");
 
 	GLuint DiffuseDayID = LoadTexture("Textures/earth_2k.jpg");
 	GLuint TextureSpecularID = LoadTexture("Textures/2k_earth_specular_map.jpg");
@@ -622,13 +543,15 @@ int main() {
 	float angleRot = 5;
 
 
+	EarthShader.use();
+	EarthShader.setInt("TextureSampler", 0);
+	EarthShader.setInt("TextureSpecularSampler", 1);
+	EarthShader.setInt("TextureCloudsSampler", 2);
+	EarthShader.setInt("TextureNightSampler", 3);
 
-	glUseProgram(ProgramId);
+	SkyBoxShader.use();
+	SkyBoxShader.setInt("skybox", 4);
 
-	glUseProgram(SkyBoxShader);
-	GLint CubeMapSampler = glGetUniformLocation(SkyBoxShader, "skybox");
-	glUniform1i(CubeMapSampler, 4);
-	
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
@@ -658,15 +581,13 @@ int main() {
 				
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
-		glUseProgram(ProgramId);
+		EarthShader.use();
 
 		glm::mat4 NormalMatrix = glm::inverse(glm::transpose(Camera.GetView() * ModelMatrix));
 		glm::mat4 ViewProjectionMatrix = Camera.GetViewProjection();
 		glm::mat4 ModelViewProjection = ViewProjectionMatrix * ModelMatrix;
 
-
-		GLint TimeID = glGetUniformLocation(ProgramId, "Time");
-		glUniform1f(TimeID, CurrentTime);
+		EarthShader.setFloat("Time", CurrentTime);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, DiffuseDayID);
@@ -680,34 +601,13 @@ int main() {
 		glActiveTexture(GL_TEXTURE3);
 		glBindTexture(GL_TEXTURE_2D, DiffuseNightID);
 
-		GLint TextureDiffuseSamplerID = glGetUniformLocation(ProgramId, "TextureSampler");
-		GLint TextureSpecularSampler = glGetUniformLocation(ProgramId, "TextureSpecularSampler");
-		GLint TextureCloudsSampler = glGetUniformLocation(ProgramId, "TextureCloudsSampler");
-		GLint TextureNightSampler = glGetUniformLocation(ProgramId, "TextureNightSampler");
-
-		GLint ModelViewProjectionID = glGetUniformLocation(ProgramId, "ModelViewProjection");
-		glUniformMatrix4fv(ModelViewProjectionID, 1, GL_FALSE, glm::value_ptr(ModelViewProjection));
-
-		GLint NormalMatrixID = glGetUniformLocation(ProgramId, "NormalMatrix");
-		glUniformMatrix4fv(NormalMatrixID,1,GL_FALSE,glm::value_ptr(NormalMatrix));
-
-		GLint LightDirectionID = glGetUniformLocation(ProgramId, "LightDirection");
-		glUniform3fv(LightDirectionID, 1, glm::value_ptr(Camera.GetView() * glm::vec4{ lightDir.x,lightDir.y,lightDir.z,0.0f }));
-
-		GLint AmbientLightID = glGetUniformLocation(ProgramId, "AmbientLight");
-		glUniform3fv(AmbientLightID, 1, glm::value_ptr(glm::vec3{ AmbientColor.x,AmbientColor.y,AmbientColor.z}));
-
-		GLint CloudSpeedID = glGetUniformLocation(ProgramId, "CloudsRotationSpeed");
-		glUniform2fv(CloudSpeedID, 1, glm::value_ptr(glm::vec2{ CloudSpeed.x,CloudSpeed.y }));
-
-		GLint LightIntensityID = glGetUniformLocation(ProgramId, "LightIntensity");
-		glUniform1f(LightIntensityID, Light.Intensity);
-
-		
-		glUniform1i(TextureDiffuseSamplerID, 0);
-		glUniform1i(TextureSpecularSampler, 1);
-		glUniform1i(TextureCloudsSampler, 2);
-		glUniform1i(TextureNightSampler, 3);
+		EarthShader.setMat4("ModelViewProjection", ModelViewProjection);
+		EarthShader.setMat4("NormalMatrix", NormalMatrix);
+		EarthShader.setVec3("LightDirection", Camera.GetView() * glm::vec4{ lightDir.x,lightDir.y,lightDir.z,0.0f });
+		EarthShader.setVec3("AmbientLight", glm::vec3{ AmbientColor.x,AmbientColor.y,AmbientColor.z });
+		EarthShader.setVec2("CloudsRotationSpeed", glm::vec2{ CloudSpeed.x,CloudSpeed.y });
+		EarthShader.setFloat("LightIntensity", Light.Intensity);
+			
 
 		//glBindVertexArray(QuadVAO);
 		glBindVertexArray(SphereGeometry);
@@ -717,17 +617,13 @@ int main() {
 		
 		glBindVertexArray(0);
 				
-		
-
-		glUseProgram(SkyBoxShader);
+		SkyBoxShader.use();
 
 		glm::mat4 viewMatrix = glm::mat4(glm::mat3(Camera.GetView()));
-		glm::mat4 projection = Camera.GetProjection();
+		glm::mat4 projectionMatrix = Camera.GetProjection();
 
-		GLint ViewID = glGetUniformLocation(SkyBoxShader, "View");
-		GLint ProjectionID = glGetUniformLocation(SkyBoxShader, "Projection");
-		glUniformMatrix4fv(ViewID, 1, GL_FALSE, glm::value_ptr(viewMatrix));
-		glUniformMatrix4fv(ProjectionID, 1, GL_FALSE, glm::value_ptr(projection));
+		SkyBoxShader.setMat4("View", viewMatrix);
+		SkyBoxShader.setMat4("Projection", projectionMatrix);
 
 		glBindVertexArray(CubeMap);
 		glActiveTexture(GL_TEXTURE4);
