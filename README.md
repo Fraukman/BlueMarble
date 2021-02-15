@@ -3,7 +3,7 @@ OpenGL simulation of the famous Blue Marble photo, a famous photograph of the Ea
 
 
 ## Screenshot
-![alt text](https://github.com/Fraukman/BlueMarble/blob/main/Screenshots/BlueMarbel.png)
+![alt text](https://github.com/Fraukman/BlueMarble/blob/main/BlueMarbel/Screenshots/BlueMarbel.png)
 
 # Features
 - Real-Time Rendering with OpenGL.
