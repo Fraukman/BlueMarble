@@ -156,6 +156,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="BlueMarbel.cpp" />
+    <ClCompile Include="CubeMap.cpp" />
     <ClCompile Include="GUI\imgui.cpp" />
     <ClCompile Include="GUI\imgui_demo.cpp" />
     <ClCompile Include="GUI\imgui_draw.cpp" />
@@ -164,9 +165,12 @@
     <ClCompile Include="GUI\imgui_tables.cpp" />
     <ClCompile Include="GUI\imgui_widgets.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="Sphere.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="CubeMap.h" />
+    <ClInclude Include="FlyCamera.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="GUI\imconfig.h" />
     <ClInclude Include="GUI\imgui.h" />
@@ -176,7 +180,9 @@
     <ClInclude Include="GUI\imstb_rectpack.h" />
     <ClInclude Include="GUI\imstb_textedit.h" />
     <ClInclude Include="GUI\imstb_truetype.h" />
+    <ClInclude Include="Sphere.h" />
     <ClInclude Include="Texture.h" />
+    <ClInclude Include="Vertex.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
